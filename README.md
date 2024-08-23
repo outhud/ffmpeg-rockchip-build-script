@@ -8,7 +8,15 @@
 > 
 > (no other build methods tested)
 > 
-> Tested on Radxa Zero 3W (RK3566) with Armbian bookworm 24.5.5 and Linux 6.1.75-vendor-rk35xx. 
+> Tested on Radxa Zero 3W (RK3566) with Armbian bookworm 24.5.5 and Linux 6.1.75-vendor-rk35xx.
+>
+> Add these lines to `/etc/udev/rules.d/11-rockchip-multimedia.rules`
+> ```
+> KERNEL=="mpp_service", MODE="0660", GROUP="video"
+> KERNEL=="rga", MODE="0660", GROUP="video"
+> KERNEL=="system-dma32", MODE="0666", GROUP="video"
+> KERNEL=="system-uncached-dma32", MODE="0666", GROUP="video" RUN+="/usr/bin/chmod a+rw /dev/dma_heap"
+> ```
 >
 > Original readme.md follows.
 
