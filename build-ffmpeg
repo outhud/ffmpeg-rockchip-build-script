@@ -3,9 +3,11 @@
 # HOMEPAGE: https://github.com/markus-perl/ffmpeg-build-script
 # LICENSE: https://github.com/markus-perl/ffmpeg-build-script/blob/master/LICENSE
 
+# ffmpeg-rockchip version
+
 PROGNAME=$(basename "$0")
-FFMPEG_VERSION=7.0
-SCRIPT_VERSION=1.52
+FFMPEG_ROCKCHIP_VERSION="8164ff7"
+SCRIPT_VERSION=1.52r
 CWD=$(pwd)
 PACKAGES="$CWD/packages"
 WORKSPACE="$CWD/workspace"
@@ -20,14 +22,6 @@ DISABLE_LV2=false
 LATEST=false
 MANPAGES=1
 CURRENT_PACKAGE_VERSION=0
-
-# Check for Apple Silicon
-if [[ ("$(uname -m)" == "arm64") && ("$OSTYPE" == "darwin"*) ]]; then
-  # If arm64 AND darwin (macOS)
-  export ARCH=arm64
-  export MACOSX_DEPLOYMENT_TARGET=11.0
-  MACOS_M1=true
-fi
 
 # Speed up the process
 # Env Var NUMJOBS overrides automatic detection
@@ -216,7 +210,7 @@ usage() {
   echo ""
 }
 
-echo "ffmpeg-build-script v$SCRIPT_VERSION"
+echo "ffmpeg-rockchip-build-script v$SCRIPT_VERSION"
 echo "========================="
 echo ""
 
@@ -520,7 +514,7 @@ if command_exists "python3"; then
   fi
 fi
 
-if build "svtav1" "2.1.0"; then
+if build "svtav1" "2.2.0"; then
   # Last known working commit which passed CI Tests from HEAD branch
   download "https://gitlab.com/AOMediaCodec/SVT-AV1/-/archive/v$CURRENT_PACKAGE_VERSION/SVT-AV1-v$CURRENT_PACKAGE_VERSION.tar.gz" "svtav1-$CURRENT_PACKAGE_VERSION.tar.gz"
   cd "${PACKAGES}"/svtav1-$CURRENT_PACKAGE_VERSION//Build/linux || exit
@@ -528,7 +522,6 @@ if build "svtav1" "2.1.0"; then
   execute make -j $MJOBS
   execute make install
   execute cp SvtAv1Enc.pc "${WORKSPACE}/lib/pkgconfig/"
-  execute cp SvtAv1Dec.pc "${WORKSPACE}/lib/pkgconfig/"
   build_done "svtav1" $CURRENT_PACKAGE_VERSION
 fi
 CONFIGURE_OPTIONS+=("--enable-libsvtav1")
@@ -969,64 +962,90 @@ if build "libzmq" "4.3.5"; then
 fi
 
 ##
-## HWaccel library
+## libdrm library
 ##
 
-if [[ "$OSTYPE" == "linux-gnu" ]]; then
-  if command_exists "nvcc"; then
-    if build "nv-codec" "11.1.5.3"; then
-      download "https://github.com/FFmpeg/nv-codec-headers/releases/download/n$CURRENT_PACKAGE_VERSION/nv-codec-headers-$CURRENT_PACKAGE_VERSION.tar.gz"
-      execute make PREFIX="${WORKSPACE}"
-      execute make PREFIX="${WORKSPACE}" install
-      build_done "nv-codec" $CURRENT_PACKAGE_VERSION
-    fi
-    CFLAGS+=" -I/usr/local/cuda/include"
-    LDFLAGS+=" -L/usr/local/cuda/lib64"
-    CONFIGURE_OPTIONS+=("--enable-cuda-nvcc" "--enable-cuvid" "--enable-nvdec" "--enable-nvenc" "--enable-cuda-llvm" "--enable-ffnvcodec")
+if build "libdrm" "2.4.122"; then
+  # Download the libdrm tarball
+  download "https://gitlab.freedesktop.org/mesa/drm/-/archive/libdrm-$CURRENT_PACKAGE_VERSION/drm-libdrm-$CURRENT_PACKAGE_VERSION.tar.gz"
 
-    if [ -z "$LDEXEFLAGS" ]; then
-      CONFIGURE_OPTIONS+=("--enable-libnpp") # Only libnpp cannot be statically linked.
-    fi
-    if [ -z "$CUDA_COMPUTE_CAPABILITY" ]; then
-      # Set default value if no compute capability was found
-      # Note that multi-architecture builds are not supported in ffmpeg
-      # see https://patchwork.ffmpeg.org/comment/62905/
-      export CUDA_COMPUTE_CAPABILITY=52
-    fi
-    CONFIGURE_OPTIONS+=("--nvccflags=-gencode arch=compute_$CUDA_COMPUTE_CAPABILITY,code=sm_$CUDA_COMPUTE_CAPABILITY -O2")
-  else
-    CONFIGURE_OPTIONS+=("--disable-ffnvcodec")
-  fi
+  # Navigate to the extracted directory
+  cd "$PACKAGES/drm-libdrm-$CURRENT_PACKAGE_VERSION" || exit
 
-  # Vaapi doesn't work well with static links FFmpeg.
-  if [ -z "$LDEXEFLAGS" ]; then
-    # If the libva development SDK is installed, enable vaapi.
-    if library_exists "libva"; then
-      if build "vaapi" "1"; then
-        build_done "vaapi" "1"
-      fi
-      CONFIGURE_OPTIONS+=("--enable-vaapi")
-    fi
-  fi
+  # Set up Meson build with desired options
+  execute meson setup libdrm_build --prefix="${WORKSPACE}" -Dnouveau=disabled -Dradeon=disabled -Damdgpu=disabled -Dfreedreno=disabled  -Detnaviv=disabled
 
-  if build "amf" "1.4.33"; then
-    download "https://github.com/GPUOpen-LibrariesAndSDKs/AMF/archive/refs/tags/v$CURRENT_PACKAGE_VERSION.tar.gz" "AMF-$CURRENT_PACKAGE_VERSION.tar.gz" "AMF-$CURRENT_PACKAGE_VERSION"
-    execute rm -rf "${WORKSPACE}/include/AMF"
-    execute mkdir -p "${WORKSPACE}/include/AMF"
-    execute cp -r "${PACKAGES}"/AMF-$CURRENT_PACKAGE_VERSION/AMF-$CURRENT_PACKAGE_VERSION/amf/public/include/* "${WORKSPACE}/include/AMF/"
-    build_done "amf" $CURRENT_PACKAGE_VERSION
-  fi
-  CONFIGURE_OPTIONS+=("--enable-amf")
+  # Build and install using Ninja
+  execute ninja -C libdrm_build install
+
+  # Mark the build as done
+  build_done "libdrm" "$CURRENT_PACKAGE_VERSION"
 fi
+
+
+##
+## Rockchip MPP library
+##
+
+if build "rkmpp" "jellyfin-mpp"; then
+
+  # Remove the existing directory if it exists
+  if [ -d "$PACKAGES/rkmpp" ]; then
+    rm -rf "$PACKAGES/rkmpp"
+  fi
+
+  # Clone the MPP repository
+  execute git clone -b jellyfin-mpp --depth=1 https://github.com/nyanmisaka/mpp.git "$PACKAGES/rkmpp"
+  cd "$PACKAGES/rkmpp" || exit
+
+  # Create a build directory and configure the build
+  mkdir rkmpp_build
+  cd rkmpp_build || exit
+  execute cmake  -DCMAKE_INSTALL_PREFIX="${WORKSPACE}" -DCMAKE_BUILD_TYPE=Release  -DBUILD_SHARED_LIBS=ON -DBUILD_TEST=OFF  -Wno-dev ..
+
+  # Build and install MPP
+  execute make -j $MJOBS
+  execute make install
+
+  # Mark the build as done
+  build_done "rkmpp" "jellyfin-mpp"
+fi
+CONFIGURE_OPTIONS+=("--enable-rkmpp")
+
+##
+## Rockchip RGA library
+##
+
+if build "rkrga" "jellyfin-rga"; then
+
+  # Remove the existing directory if it exists
+  if [ -d "$PACKAGES/rkrga" ]; then
+    rm -rf "$PACKAGES/rkrga"
+  fi
+
+  # Clone the RGA repository
+  execute git clone -b jellyfin-rga --depth=1 https://github.com/nyanmisaka/rk-mirrors.git "$PACKAGES/rkrga"
+  cd "$PACKAGES" || exit
+
+  # Configure and build RGA using Meson and Ninja
+  execute meson setup rkrga rkrga_build  --prefix="${WORKSPACE}" --libdir=lib --buildtype=release  --default-library=shared -Dcpp_args=-fpermissive -Dlibdrm=false -Dlibrga_demo=false
+
+  # Configure the build directory (suppress the output)
+  execute meson configure rkrga_build 
+
+  # Build and install RGA
+  execute ninja -C rkrga_build install
+
+  # Mark the build as done
+  build_done "rkrga" "jellyfin-rga"
+fi
+CONFIGURE_OPTIONS+=("--enable-rkrga")
+
+
 
 ##
 ## FFmpeg
 ##
-
-EXTRA_VERSION=""
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  EXTRA_VERSION="${FFMPEG_VERSION}"
-fi
 
 if [ -d "$CWD/.git" ]; then
   echo -e "\nTemporarily moving .git dir to .git.bak to workaround ffmpeg build bug" #causing ffmpeg version number to be wrong
@@ -1034,26 +1053,50 @@ if [ -d "$CWD/.git" ]; then
   # if build fails below, .git will remain in the wrong place...
 fi
 
-build "ffmpeg" "$FFMPEG_VERSION"
-download "https://github.com/FFmpeg/FFmpeg/archive/refs/heads/release/$FFMPEG_VERSION.tar.gz" "FFmpeg-release-$FFMPEG_VERSION.tar.gz"
-# shellcheck disable=SC2086
-./configure "${CONFIGURE_OPTIONS[@]}" \
-  --disable-debug \
-  --disable-shared \
-  --enable-pthreads \
-  --enable-static \
-  --enable-version3 \
-  --extra-cflags="${CFLAGS}" \
-  --extra-ldexeflags="${LDEXEFLAGS}" \
-  --extra-ldflags="${LDFLAGS}" \
-  --extra-libs="${EXTRALIBS}" \
-  --pkgconfigdir="$WORKSPACE/lib/pkgconfig" \
-  --pkg-config-flags="--static" \
-  --prefix="${WORKSPACE}" \
-  --extra-version="${EXTRA_VERSION}"
 
-execute make -j $MJOBS
-execute make install
+# Check if ffmpeg-rockchip needs to be built
+if build "ffmpeg-rockchip" "$FFMPEG_ROCKCHIP_VERSION"; then
+
+  # Remove the existing directory if it exists
+  if [ -d "$PACKAGES/ffmpeg-rockchip" ]; then
+    rm -rf "$PACKAGES/ffmpeg-rockchip"
+  fi
+
+  # Clone the ffmpeg-rockchip repository
+  #git clone --depth=1 https://github.com/nyanmisaka/ffmpeg-rockchip.git "$PACKAGES/ffmpeg-rockchip"
+  #cd "$PACKAGES/ffmpeg-rockchip" || exit
+  
+  # Download and extract the ffmpeg-rockchip tarball for the specific commit
+  download "https://github.com/nyanmisaka/ffmpeg-rockchip/archive/$FFMPEG_ROCKCHIP_VERSION.tar.gz" "ffmpeg-rockchip-$FFMPEG_ROCKCHIP_VERSION.tar.gz"
+
+  # Configure and build ffmpeg-rockchip with the required options (set PKG_CONFIG_PATH to find libdrm)
+  # Set PKG_CONFIG_PATH to include the directory where libdrm.pc was installed
+  export PKG_CONFIG_PATH="${WORKSPACE}/lib/aarch64-linux-gnu/pkgconfig:${PKG_CONFIG_PATH}"
+
+  ./configure "${CONFIGURE_OPTIONS[@]}" \
+    --disable-debug \
+    --disable-shared \
+    --enable-pthreads \
+    --enable-static \
+    --enable-version3 \
+    --enable-libdrm \
+    --extra-cflags="${CFLAGS}" \
+    --extra-ldexeflags="${LDEXEFLAGS}" \
+    --extra-ldflags="${LDFLAGS}" \
+    --extra-libs="${EXTRALIBS}" \
+    --pkgconfigdir="$WORKSPACE/lib/pkgconfig" \
+    --pkg-config-flags="--static" \
+    --prefix="${WORKSPACE}" \
+    --extra-version="${EXTRA_VERSION}"
+
+  # Build and install ffmpeg-rockchip
+  execute make -j $MJOBS
+  execute make install
+  
+  # Mark the build as done
+  build_done "ffmpeg-rockchip" "$FFMPEG_ROCKCHIP_VERSION"
+fi
+
 
 if [ -d "$CWD/.git.bak" ]; then
   mv "$CWD/.git.bak" "$CWD/.git"
