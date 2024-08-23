@@ -2,7 +2,9 @@
 
 > This is a fork of [markus-perl/ffmpeg-build-script](https://github.com/markus-perl/ffmpeg-build-script) with modifications to build [nyanmisaka/ffmpeg-rockchip](https://github.com/nyanmisaka/ffmpeg-rockchip) with required depencies for hardware acceleration support on Rockchip platforms (RK3588, RK3566...)
 >
-> Usage: ./build-ffmpeg --enable-gpl-and-non-free --build
+> **Usage:**
+> 
+> `./build-ffmpeg --enable-gpl-and-non-free --build`
 > 
 > (no other build methods tested)
 > 
