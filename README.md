@@ -8,9 +8,9 @@
 > 
 > (no other build methods tested)
 > 
-> Tested on Radxa Zero 3W (RK3566) with Armbian bookworm 24.5.5 and Linux 6.1.75-vendor-rk35xx.
+> Tested on Radxa Zero 3W (RK3566) with Armbian bookworm 24.5.5 and Linux 6.1.75-vendor-rk35xx. (Total build time on this system about 4 hours)
 >
-> Add these lines to `/etc/udev/rules.d/11-rockchip-multimedia.rules`
+> Add these lines to `/etc/udev/rules.d/11-rockchip-multimedia.rules` 
 > ```
 > KERNEL=="mpp_service", MODE="0660", GROUP="video"
 > KERNEL=="rga", MODE="0660", GROUP="video"
@@ -18,7 +18,7 @@
 > KERNEL=="system-uncached-dma32", MODE="0666", GROUP="video" RUN+="/usr/bin/chmod a+rw /dev/dma_heap"
 > ```
 >
-> Original readme.md follows.
+> Original ffmpeg-build-scipt readme.md follows.
 
 
 [![build test](https://github.com/markus-perl/ffmpeg-build-script/workflows/build%20test/badge.svg?branch=master)](https://github.com/markus-perl/ffmpeg-build-script/actions)
