@@ -1,6 +1,6 @@
 # FFmpeg Build Script with Rockchip HW Acceleration
 
-> This is a fork of [markus-perl/ffmpeg-build-script](https://github.com/markus-perl/ffmpeg-build-script) with modifications to build [nyanmisaka/ffmpeg-rockchip](https://github.com/nyanmisaka/ffmpeg-rockchip) with required depencies for hardware acceleration support on Rockchip platforms (RK3588, RK3566...)
+> This is a fork of [markus-perl/ffmpeg-build-script](https://github.com/markus-perl/ffmpeg-build-script) with modifications to build [nyanmisaka/ffmpeg-rockchip](https://github.com/nyanmisaka/ffmpeg-rockchip) with required dependencies for hardware acceleration support on Rockchip platforms (RK3588, RK3566...)
 >
 > **Usage:**
 > 
@@ -8,7 +8,7 @@
 > 
 > (no other build methods tested)
 > 
-> Tested on Radxa Zero 3W (RK3566) with Armbian bookworm 24.5.5 and Linux 6.1.75-vendor-rk35xx. (Total build time on this system about 4 hours)
+> Tested on Radxa Zero 3W (RK3566) with Armbian bookworm 24.5.5 and Linux 6.1.75-vendor-rk35xx.
 >
 > Add these lines to `/etc/udev/rules.d/11-rockchip-multimedia.rules` 
 > ```
