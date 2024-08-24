@@ -7,9 +7,7 @@
 > `./build-ffmpeg --enable-gpl-and-non-free --build`
 > 
 > (no other build methods tested)
-> 
-> Tested on Radxa Zero 3W (RK3566) with Armbian bookworm 24.5.5 and Linux 6.1.75-vendor-rk35xx.
->
+>  
 > Add these lines to `/etc/udev/rules.d/11-rockchip-multimedia.rules` 
 > ```
 > KERNEL=="mpp_service", MODE="0660", GROUP="video"
@@ -18,6 +16,10 @@
 > KERNEL=="system-uncached-dma32", MODE="0666", GROUP="video" RUN+="/usr/bin/chmod a+rw /dev/dma_heap"
 > ```
 >
+> Tested on Radxa Zero 3W (RK3566) with :
+>   Official radxa-zero3_debian_bullseye_xfce_b6.img with Linux kernel 5.10.160-26-rk356x. 
+>   Armbian bookworm 24.5.5 and Linux kernel 6.1.75-vendor-rk35xx.
+> 
 > Original ffmpeg-build-scipt readme.md follows.
 
 
