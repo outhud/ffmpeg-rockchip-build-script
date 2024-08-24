@@ -16,11 +16,13 @@
 > KERNEL=="system-uncached-dma32", MODE="0666", GROUP="video" RUN+="/usr/bin/chmod a+rw /dev/dma_heap"
 > ```
 >
-> Tested on Radxa Zero 3W (RK3566) with :
->   Official radxa-zero3_debian_bullseye_xfce_b6.img with Linux kernel 5.10.160-26-rk356x. 
->   Armbian bookworm 24.5.5 and Linux kernel 6.1.75-vendor-rk35xx.
+> Tested on Radxa Zero 3W (RK3566) with:
+> * Official radxa-zero3_debian_bullseye_xfce_b6.img with Linux kernel 5.10.160-26-rk356x. 
+> * Armbian bookworm 24.5.5 and Linux kernel 6.1.75-vendor-rk35xx.
+>
+> Build time on RK3566: about 4 hours.
 > 
-> Original ffmpeg-build-scipt readme.md follows.
+> Original ffmpeg-build-script readme.md follows.
 
 
 [![build test](https://github.com/markus-perl/ffmpeg-build-script/workflows/build%20test/badge.svg?branch=master)](https://github.com/markus-perl/ffmpeg-build-script/actions)
