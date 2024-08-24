@@ -484,7 +484,7 @@ if command_exists "python3"; then
           if ! command_exists ${r}; then
             execute pip3 install ${r} --quiet --upgrade --no-cache-dir --disable-pip-version-check
           fi
-          export PATH=$PATH:~/Library/Python/3.9/bin
+          export PATH=$PATH:~/Library/Python/3.9/bin:~/.local/bin
         done
       fi
     fi
