@@ -6,7 +6,7 @@
 > 
 > `./build-ffmpeg --enable-gpl-and-non-free --build`
 > 
-> (no other build methods tested)
+> (no other build methods tested, docker and webinstall methods don't work)
 >  
 > Add these lines to `/etc/udev/rules.d/11-rockchip-multimedia.rules` 
 > ```
